@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitLife</title>
+<style>
+:root{
+  --bg:#f5f6f8; --card:#ffffff; --text:#1d2530; --muted:#667085; --line:#e2e5ea;
+  --accent:#1f7a5c; --accent-h:#18634a; --accent-soft:#e6f4ee;
+  --danger:#c0392b; --danger-soft:#fdecea; --warn-soft:#fff4dc; --warn:#8a5a00;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#14181d; --card:#1c2128; --text:#e8ebef; --muted:#9aa4b2; --line:#2d343d;
+    --accent:#3fb68b; --accent-h:#58c9a0; --accent-soft:#16302a;
+    --danger:#ff7b6b; --danger-soft:#3a1f1c; --warn-soft:#3a2f14; --warn:#f0c36b;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:var(--card);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.bar{max-width:980px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.logo{font-weight:700;font-size:20px;color:var(--accent)}
+.client{margin-left:auto;display:flex;align-items:center;gap:8px;color:var(--muted)}
+.client input{width:80px}
+nav{max-width:980px;margin:0 auto;padding:0 16px;display:flex;gap:4px;overflow-x:auto}
+nav button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font:inherit;color:var(--muted);cursor:pointer;white-space:nowrap}
+nav button.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+main{max-width:980px;margin:0 auto;padding:20px 16px 60px}
+h2{font-size:18px;margin:0 0 12px}
+h3{font-size:15px;margin:0 0 8px}
+.section{margin-bottom:28px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.price{font-size:24px;font-weight:700;margin:4px 0}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+button,.btn{font:inherit;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);padding:7px 14px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.primary:hover{background:var(--accent-h)}
+button.danger{color:var(--danger)}
+button.danger:hover{border-color:var(--danger)}
+button:disabled{opacity:.5;cursor:not-allowed}
+input,select{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text)}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 3px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:13px;color:var(--muted);font-weight:500}
+tr:last-child td{border-bottom:0}
+.table-wrap{overflow-x:auto}
+.badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600}
+.b-ok{background:var(--accent-soft);color:var(--accent)}
+.b-off{background:var(--line);color:var(--muted)}
+.b-warn{background:var(--warn-soft);color:var(--warn)}
+.b-bad{background:var(--danger-soft);color:var(--danger)}
+.notice{padding:12px 14px;border-radius:8px;background:var(--warn-soft);color:var(--warn);margin-bottom:12px}
+.notice.ok{background:var(--accent-soft);color:var(--accent)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end}
+.row > div{flex:1;min-width:130px}
+.row input{width:100%}
+.actions{display:flex;gap:6px}
+dialog{border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);padding:20px;width:min(400px,92vw)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog input,dialog select{width:100%}
+.dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+#toasts{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;z-index:20;max-width:min(360px,90vw)}
+.toast{padding:11px 14px;border-radius:8px;background:var(--text);color:var(--bg);box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.toast.err{background:var(--danger);color:#fff}
+.toast.ok{background:var(--accent);color:#fff}
+.empty{padding:18px;text-align:center;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="logo">FitLife</div>
+    <div id="health" class="small muted"></div>
+    <div class="client">
+      <label for="clientId" style="margin:0">Номер клиента</label>
+      <input id="clientId" type="number" min="1" value="1">
+    </div>
+  </div>
+  <nav id="tabs">
+    <button data-tab="sub" class="active">Абонемент</button>
+    <button data-tab="schedule">Расписание</button>
+    <button data-tab="bookings">Мои записи</button>
+    <button data-tab="admin">Управление</button>
+  </nav>
+</header>
+
+<main>
+  <!-- Вкладка 1: абонемент и тарифы -->
+  <div id="tab-sub">
+    <div class="section">
+      <h2>Мой абонемент</h2>
+      <div id="activeSub"></div>
+    </div>
+    <div class="section">
+      <h2>Тарифы</h2>
+      <div id="tariffCards" class="grid"></div>
+    </div>
+    <div class="section">
+      <h2>История абонементов</h2>
+      <div class="card table-wrap" id="subHistory"></div>
+    </div>
+  </div>
+
+  <!-- Вкладка 2: расписание -->
+  <div id="tab-schedule" hidden>
+    <h2>Расписание занятий</h2>
+    <div id="scheduleNotice"></div>
+    <div class="card table-wrap" id="scheduleTable"></div>
+  </div>
+
+  <!-- Вкладка 3: мои записи -->
+  <div id="tab-bookings" hidden>
+    <h2>Мои записи на тренировки</h2>
+    <div class="card table-wrap" id="bookingsTable"></div>
+  </div>
+
+  <!-- Вкладка 4: управление (CRUD) -->
+  <div id="tab-admin" hidden>
+    <div class="section">
+      <h2>Тарифы (сервис абонементов)</h2>
+      <div class="card table-wrap" id="adminTariffs"></div>
+      <div class="card" style="margin-top:12px">
+        <h3>Новый тариф</h3>
+        <div class="row">
+          <div><label>Название</label><input id="nt-name" placeholder="Полугодие"></div>
+          <div><label>Цена, ₽</label><input id="nt-price" type="number" min="0" placeholder="12000"></div>
+          <div><label>Срок, дней</label><input id="nt-days" type="number" min="1" placeholder="180"></div>
+          <div style="flex:0"><button class="primary" id="nt-add">Добавить</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Занятия (сервис записи)</h2>
+      <div class="card table-wrap" id="adminClasses"></div>
+      <div class="card" style="margin-top:12px">
+        <h3>Новое занятие</h3>
+        <div class="row">
+          <div><label>Название</label><input id="nc-title" placeholder="Пилатес"></div>
+          <div><label>Тренер</label><input id="nc-trainer" placeholder="Орлова Е."></div>
+          <div><label>Начало</label><input id="nc-start" type="datetime-local"></div>
+          <div><label>Мест</label><input id="nc-cap" type="number" min="1" placeholder="12"></div>
+          <div style="flex:0"><button class="primary" id="nc-add">Добавить</button></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>Служебное</h2>
+      <div class="card">
+        <p class="muted" style="margin-top:0">Переводит в статус «истёк» все абонементы, у которых дата окончания уже прошла
+        (в демо-данных такой абонемент у клиента 99).</p>
+        <button id="expireBtn">Закрыть просроченные абонементы</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- Окно покупки -->
+<dialog id="buyDlg">
+  <h3 id="buyTitle"></h3>
+  <p class="muted" id="buyInfo" style="margin-top:0"></p>
+  <label for="buyCard">Карта</label>
+  <select id="buyCard">
+    <option value="tok_visa_4242">Карта принимается (tok_visa_4242)</option>
+    <option value="declined">Карта отклоняется (declined)</option>
+  </select>
+  <div class="dlg-actions">
+    <button id="buyCancel">Отмена</button>
+    <button class="primary" id="buyOk">Оплатить</button>
+  </div>
+</dialog>
+
+<!-- Окно редактирования -->
+<dialog id="editDlg">
+  <h3 id="editTitle"></h3>
+  <div id="editFields"></div>
+  <div class="dlg-actions">
+    <button id="editCancel">Отмена</button>
+    <button class="primary" id="editOk">Сохранить</button>
+  </div>
+</dialog>
+
+<div id="toasts"></div>
+
+<script>
+"use strict";
+
+// Адреса двух сервисов (если порты другие - поменять здесь)
+const SUB = "http://127.0.0.1:8001";   // абонементы и оплата
+const BOOK = "http://127.0.0.1:8002";  // запись на тренировки
+
+// Тексты ошибок сервера -> понятные сообщения
+const ERR_TEXT = {
+  "Payment declined, subscription not activated": "Оплата отклонена, абонемент не оформлен.",
+  "No subscription valid on the class date: buy or renew it first":
+    "На дату этого занятия у вас нет действующего абонемента. Сначала купите или продлите его.",
+  "Client is already booked on this class": "Вы уже записаны на это занятие.",
+  "No free places on this class": "На это занятие нет свободных мест.",
+  "Subscription service is unavailable, try again later": "Сервис абонементов не отвечает, попробуйте позже.",
+  "Tariff is used by existing subscriptions and cannot be deleted":
+    "Тариф нельзя удалить: по нему уже оформлены абонементы.",
+  "Class has bookings and cannot be deleted": "Занятие нельзя удалить: на него есть записи.",
+  "Capacity is less than the number of booked clients":
+    "Нельзя поставить мест меньше, чем уже записалось клиентов.",
+  "Tariff with supplied ID does not exist": "Такого тарифа нет.",
+  "Class with supplied ID does not exist": "Такого занятия нет."
+};
+
+// ---------- вспомогательное ----------
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money = (n) => Number(n).toLocaleString("ru-RU") + " ₽";
+const fmtDate = (d) => new Date(d + "T00:00:00").toLocaleDateString("ru-RU");
+const fmtDT = (d) => new Date(d).toLocaleString("ru-RU", {day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"});
+const clientId = () => Math.max(1, parseInt($("clientId").value, 10) || 1);
+
+function toast(text, kind) {
+  const t = document.createElement("div");
+  t.className = "toast " + (kind || "");
+  t.textContent = text;
+  $("toasts").appendChild(t);
+  setTimeout(() => t.remove(), 4500);
+}
+
+// Один запрос к сервису. Возвращает {ok, status, data}; при обрыве связи - status 0.
+async function api(base, path, method, body) {
+  const opts = { method: method || "GET", headers: { "accept": "application/json" } };
+  if (body !== undefined) {
+    opts.headers["Content-Type"] = "application/json";
+    opts.body = JSON.stringify(body);
+  }
+  try {
+    const resp = await fetch(base + path, opts);
+    let data = null;
+    try { data = await resp.json(); } catch (e) { /* пустой ответ */ }
+    return { ok: resp.ok, status: resp.status, data };
+  } catch (e) {
+    return { ok: false, status: 0, data: null, port: base.split(":").pop() };
+  }
+}
+
+function errorText(r) {
+  if (r.status === 0) return "Сервис на порту " + r.port + " не отвечает. Он запущен?";
+  let detail = r.data && r.data.detail;
+  if (Array.isArray(detail)) return "Проверьте заполнение полей формы.";   // ошибка 422
+  if (typeof detail === "string" && ERR_TEXT[detail]) return ERR_TEXT[detail];
+  return detail ? String(detail) : "Ошибка " + r.status;
+}
+
+// ---------- состояние ----------
+let tariffs = [];     // с сервиса 8001
+let classes = [];     // с сервиса 8002
+let myBookings = [];  // с сервиса 8002
+let mySubs = [];      // с сервиса 8001
+
+// ---------- загрузка данных ----------
+async function loadTariffs() {
+  const r = await api(SUB, "/tariffs/");
+  tariffs = r.ok ? r.data : [];
+  return r;
+}
+async function loadClasses() {
+  const r = await api(BOOK, "/classes/");
+  classes = r.ok ? r.data : [];
+  return r;
+}
+
+async function refreshAll() {
+  const id = clientId();
+  const [rt, rc, rs, rb, ra] = await Promise.all([
+    loadTariffs(), loadClasses(),
+    api(SUB, "/subscriptions/my?client_id=" + id),
+    api(BOOK, "/bookings/my?client_id=" + id),
+    api(SUB, "/subscriptions/active?client_id=" + id)
+  ]);
+  mySubs = rs.ok ? rs.data : [];
+  myBookings = rb.ok ? rb.data : [];
+
+  $("health").innerHTML =
+    (rt.status === 0 ? '<span class="badge b-bad">сервис 8001 не отвечает</span> ' : "") +
+    (rc.status === 0 ? '<span class="badge b-bad">сервис 8002 не отвечает</span>' : "");
+
+  renderActive(ra);
+  renderTariffCards();
+  renderHistory(rs);
+  renderSchedule();
+  renderBookings(rb);
+  renderAdmin();
+}
+
+// ---------- вкладка «Абонемент» ----------
+function renderActive(r) {
+  const box = $("activeSub");
+  if (r.status === 0) { box.innerHTML = '<div class="notice">Сервис абонементов не отвечает.</div>'; return; }
+  if (r.ok) {
+    const t = tariffs.find((x) => x.id === r.data.tariff_id);
+    box.innerHTML = '<div class="notice ok"><b>Абонемент действует</b>' +
+      (t ? ' (тариф «' + esc(t.name) + '»)' : '') +
+      ' с ' + fmtDate(r.data.start_date) + ' по ' + fmtDate(r.data.end_date) + '.</div>';
+  } else {
+    box.innerHTML = '<div class="notice">У клиента №' + clientId() +
+      ' нет действующего абонемента. Выберите тариф ниже, чтобы оформить.</div>';
+  }
+}
+
+function renderTariffCards() {
+  const box = $("tariffCards");
+  if (!tariffs.length) { box.innerHTML = '<div class="empty card">Тарифов пока нет.</div>'; return; }
+  box.innerHTML = tariffs.map((t) =>
+    '<div class="card"><h3>' + esc(t.name) + '</h3>' +
+    '<div class="price">' + money(t.price) + '</div>' +
+    '<div class="muted small">Срок: ' + t.duration_days + ' дн.</div>' +
+    '<div style="margin-top:12px"><button class="primary" data-buy="' + t.id + '">Купить</button></div></div>'
+  ).join("");
+}
+
+function renderHistory(r) {
+  const box = $("subHistory");
+  if (r.status === 0) { box.innerHTML = '<div class="empty">Сервис не отвечает.</div>'; return; }
+  if (!mySubs.length) { box.innerHTML = '<div class="empty">Абонементов пока не было.</div>'; return; }
+  const rows = mySubs.map((s) => {
+    const t = tariffs.find((x) => x.id === s.tariff_id);
+    const expired = s.status === "expired" || new Date(s.end_date + "T23:59:59") < new Date();
+    return "<tr><td>" + s.id + "</td><td>" + esc(t ? t.name : "тариф №" + s.tariff_id) + "</td><td>" +
+      fmtDate(s.start_date) + " – " + fmtDate(s.end_date) + "</td><td>" +
+      (expired ? '<span class="badge b-off">истёк</span>' : '<span class="badge b-ok">действует</span>') + "</td></tr>";
+  }).join("");
+  box.innerHTML = "<table><thead><tr><th>№</th><th>Тариф</th><th>Период</th><th>Статус</th></tr></thead><tbody>" + rows + "</tbody></table>";
+}
+
+let buyTariff = null;
+function openBuy(id) {
+  buyTariff = tariffs.find((t) => t.id === id);
+  if (!buyTariff) return;
+  $("buyTitle").textContent = "Тариф «" + buyTariff.name + "»";
+  $("buyInfo").textContent = money(buyTariff.price) + ", срок " + buyTariff.duration_days + " дн.";
+  $("buyDlg").showModal();
+}
+async function confirmBuy() {
+  $("buyOk").disabled = true;
+  const r = await api(SUB, "/subscriptions/buy", "POST",
+    { client_id: clientId(), tariff_id: buyTariff.id, card_token: $("buyCard").value });
+  $("buyOk").disabled = false;
+  $("buyDlg").close();
+  if (r.ok) toast("Абонемент оформлен, действует до " + fmtDate(r.data.valid_until), "ok");
+  else toast(errorText(r), "err");
+  refreshAll();
+}
+
+// ---------- вкладка «Расписание» ----------
+function renderSchedule() {
+  const box = $("scheduleTable");
+  if (!classes.length) { box.innerHTML = '<div class="empty">Занятий в расписании нет (или сервис записи не запущен).</div>'; return; }
+  const booked = new Set(myBookings.filter((b) => b.status === "active").map((b) => b.class_id));
+  const rows = classes.map((c) => {
+    let action;
+    if (booked.has(c.id)) action = '<span class="badge b-ok">вы записаны</span>';
+    else if (c.free_places <= 0) action = '<span class="badge b-off">мест нет</span>';
+    else action = '<button class="primary" data-book="' + c.id + '">Записаться</button>';
+    const places = c.free_places <= 0 ? '<span class="badge b-bad">0 из ' + c.capacity + '</span>'
+      : c.free_places + " из " + c.capacity;
+    return "<tr><td>" + esc(c.title) + "</td><td>" + fmtDT(c.starts_at) + "</td><td>" + esc(c.trainer) +
+      "</td><td>" + places + "</td><td>" + action + "</td></tr>";
+  }).join("");
+  box.innerHTML = "<table><thead><tr><th>Занятие</th><th>Начало</th><th>Тренер</th><th>Свободно мест</th><th></th></tr></thead><tbody>" + rows + "</tbody></table>";
+}
+
+async function book(classId) {
+  const r = await api(BOOK, "/bookings/", "POST", { client_id: clientId(), class_id: classId });
+  if (r.ok) toast("Вы записаны на занятие", "ok");
+  else toast(errorText(r), "err");
+  refreshAll();
+}
+
+// ---------- вкладка «Мои записи» ----------
+function renderBookings(r) {
+  const box = $("bookingsTable");
+  if (r.status === 0) { box.innerHTML = '<div class="empty">Сервис записи не отвечает.</div>'; return; }
+  if (!myBookings.length) { box.innerHTML = '<div class="empty">Записей пока нет. Выберите занятие на вкладке «Расписание».</div>'; return; }
+  const rows = myBookings.map((b) => {
+    const c = classes.find((x) => x.id === b.class_id);
+    return "<tr><td>" + b.id + "</td><td>" + esc(c ? c.title : "занятие №" + b.class_id) + "</td><td>" +
+      (c ? fmtDT(c.starts_at) : "—") + "</td><td>" + esc(c ? c.trainer : "—") + "</td><td>" +
+      (b.status === "active" ? '<span class="badge b-ok">активна</span>' : '<span class="badge b-off">отменена</span>') + "</td></tr>";
+  }).join("");
+  box.innerHTML = "<table><thead><tr><th>№</th><th>Занятие</th><th>Начало</th><th>Тренер</th><th>Статус</th></tr></thead><tbody>" + rows + "</tbody></table>";
+}
+
+// ---------- вкладка «Управление» ----------
+function renderAdmin() {
+  $("adminTariffs").innerHTML = tariffs.length
+    ? "<table><thead><tr><th>№</th><th>Название</th><th>Цена</th><th>Срок</th><th></th></tr></thead><tbody>" +
+      tariffs.map((t) => "<tr><td>" + t.id + "</td><td>" + esc(t.name) + "</td><td>" + money(t.price) +
+        "</td><td>" + t.duration_days + ' дн.</td><td><div class="actions">' +
+        '<button data-edit-tariff="' + t.id + '">Изменить</button>' +
+        '<button class="danger" data-del-tariff="' + t.id + '">Удалить</button></div></td></tr>').join("") +
+      "</tbody></table>"
+    : '<div class="empty">Тарифов нет.</div>';
+
+  $("adminClasses").innerHTML = classes.length
+    ? "<table><thead><tr><th>№</th><th>Занятие</th><th>Начало</th><th>Тренер</th><th>Мест</th><th></th></tr></thead><tbody>" +
+      classes.map((c) => "<tr><td>" + c.id + "</td><td>" + esc(c.title) + "</td><td>" + fmtDT(c.starts_at) +
+        "</td><td>" + esc(c.trainer) + "</td><td>" + c.capacity + '</td><td><div class="actions">' +
+        '<button data-edit-class="' + c.id + '">Изменить</button>' +
+        '<button class="danger" data-del-class="' + c.id + '">Удалить</button></div></td></tr>').join("") +
+      "</tbody></table>"
+    : '<div class="empty">Занятий нет (или сервис записи не запущен).</div>';
+}
+
+async function run(promise, okText) {
+  const r = await promise;
+  if (r.ok) toast(okText, "ok"); else toast(errorText(r), "err");
+  await refreshAll();
+  return r;
+}
+
+async function addTariff() {
+  const name = $("nt-name").value.trim(), price = parseFloat($("nt-price").value), days = parseInt($("nt-days").value, 10);
+  if (!name || !(price >= 0) || !(days > 0)) { toast("Заполните название, цену и срок тарифа.", "err"); return; }
+  const r = await run(api(SUB, "/tariffs/new", "POST", { name, price, duration_days: days }), "Тариф добавлен");
+  if (r.ok) ["nt-name", "nt-price", "nt-days"].forEach((i) => $(i).value = "");
+}
+
+async function addClass() {
+  const title = $("nc-title").value.trim(), trainer = $("nc-trainer").value.trim();
+  const start = $("nc-start").value, cap = parseInt($("nc-cap").value, 10);
+  if (!title || !trainer || !start || !(cap > 0)) { toast("Заполните все поля занятия.", "err"); return; }
+  const r = await run(api(BOOK, "/classes/new", "POST", { title, trainer, starts_at: start + ":00", capacity: cap }), "Занятие добавлено");
+  if (r.ok) ["nc-title", "nc-trainer", "nc-start", "nc-cap"].forEach((i) => $(i).value = "");
+}
+
+// Окно редактирования: общее для тарифов и занятий
+let editSubmit = null;
+function openEdit(title, fields, onSave) {
+  $("editTitle").textContent = title;
+  $("editFields").innerHTML = fields.map((f) =>
+    '<label for="ef-' + f.key + '">' + esc(f.label) + '</label>' +
+    '<input id="ef-' + f.key + '" type="' + f.type + '" value="' + esc(f.value) + '"' + (f.min !== undefined ? ' min="' + f.min + '"' : "") + '>'
+  ).join("");
+  editSubmit = () => {
+    const vals = {};
+    fields.forEach((f) => vals[f.key] = $("ef-" + f.key).value);
+    return onSave(vals);
+  };
+  $("editDlg").showModal();
+}
+
+function editTariff(id) {
+  const t = tariffs.find((x) => x.id === id);
+  openEdit("Тариф №" + id, [
+    { key: "name", label: "Название", type: "text", value: t.name },
+    { key: "price", label: "Цена, ₽", type: "number", value: t.price, min: 0 },
+    { key: "days", label: "Срок, дней", type: "number", value: t.duration_days, min: 1 }
+  ], (v) => run(api(SUB, "/tariffs/edit/" + id, "PUT",
+      { name: v.name.trim(), price: parseFloat(v.price), duration_days: parseInt(v.days, 10) }), "Тариф изменён"));
+}
+
+function editClass(id) {
+  const c = classes.find((x) => x.id === id);
+  openEdit("Занятие №" + id, [
+    { key: "title", label: "Название", type: "text", value: c.title },
+    { key: "trainer", label: "Тренер", type: "text", value: c.trainer },
+    { key: "start", label: "Начало", type: "datetime-local", value: c.starts_at.slice(0, 16) },
+    { key: "cap", label: "Мест", type: "number", value: c.capacity, min: 1 }
+  ], (v) => run(api(BOOK, "/classes/edit/" + id, "PUT",
+      { title: v.title.trim(), trainer: v.trainer.trim(), starts_at: v.start + ":00", capacity: parseInt(v.cap, 10) }), "Занятие изменено"));
+}
+
+function delTariff(id) {
+  const t = tariffs.find((x) => x.id === id);
+  if (confirm("Удалить тариф «" + t.name + "»?")) run(api(SUB, "/tariffs/delete/" + id, "DELETE"), "Тариф удалён");
+}
+function delClass(id) {
+  const c = classes.find((x) => x.id === id);
+  if (confirm("Удалить занятие «" + c.title + "»?")) run(api(BOOK, "/classes/delete/" + id, "DELETE"), "Занятие удалено");
+}
+
+async function expireAll() {
+  const r = await api(SUB, "/subscriptions/expire", "POST");
+  if (r.ok) toast("Закрыто просроченных абонементов: " + r.data.expired, "ok"); else toast(errorText(r), "err");
+  refreshAll();
+}
+
+// ---------- события ----------
+$("tabs").addEventListener("click", (e) => {
+  const tab = e.target.dataset.tab;
+  if (!tab) return;
+  document.querySelectorAll("#tabs button").forEach((b) => b.classList.toggle("active", b === e.target));
+  ["sub", "schedule", "bookings", "admin"].forEach((t) => $("tab-" + t).hidden = (t !== tab));
+});
+
+document.addEventListener("click", (e) => {
+  const d = e.target.dataset;
+  if (d.buy) openBuy(+d.buy);
+  else if (d.book) book(+d.book);
+  else if (d.editTariff) editTariff(+d.editTariff);
+  else if (d.delTariff) delTariff(+d.delTariff);
+  else if (d.editClass) editClass(+d.editClass);
+  else if (d.delClass) delClass(+d.delClass);
+});
+
+$("buyOk").onclick = confirmBuy;
+$("buyCancel").onclick = () => $("buyDlg").close();
+$("editCancel").onclick = () => $("editDlg").close();
+$("editOk").onclick = async () => { $("editDlg").close(); await editSubmit(); };
+$("nt-add").onclick = addTariff;
+$("nc-add").onclick = addClass;
+$("expireBtn").onclick = expireAll;
+
+$("clientId").addEventListener("change", () => {
+  try { localStorage.setItem("fitlife_client", clientId()); } catch (e) { /* хранилище недоступно - не страшно */ }
+  refreshAll();
+});
+try { const saved = localStorage.getItem("fitlife_client"); if (saved) $("clientId").value = saved; } catch (e) {}
+
+refreshAll();
+</script>
+</body>
+</html>
